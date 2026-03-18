@@ -1,0 +1,12 @@
+schema_version: 1.0.0
+source_type: skill
+source_name: plan-dti-run
+run_id: dti-graphdta-bindingdb-seed-42
+status: planned
+operations:
+  - op: set
+    path: experiments.planned.dti-graphdta-bindingdb-seed-42
+    value:
+      workflow_name: dti-benchmark-training
+      dataset_id: bindingdb_v1
+      model_family: graphdta

@@ -1,0 +1,15 @@
+schema_version: 1.0.0
+template_name: dataset-validation-output
+status: completed
+run_id: dti-graphdta-bindingdb-seed-42
+dataset:
+  dataset_id: bindingdb_v1
+  task_type: drug-target-interaction
+  drug_representation: graph
+  target_representation: sequence
+checks:
+  schema_valid: true
+  files_exist: true
+  splits_non_empty: true
+errors: []
+warnings: []

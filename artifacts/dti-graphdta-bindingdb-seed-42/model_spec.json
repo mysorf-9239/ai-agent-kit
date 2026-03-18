@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "template_name": "model-spec-output",
+  "status": "completed",
+  "run_id": "dti-graphdta-bindingdb-seed-42",
+  "model": {
+    "family": "graphdta",
+    "drug_encoder": "gcn",
+    "target_encoder": "cnn",
+    "hidden_dim": 256,
+    "model_spec_path": "artifacts/dti-graphdta-bindingdb-seed-42/model_spec.json"
+  },
+  "errors": [],
+  "warnings": []
+}

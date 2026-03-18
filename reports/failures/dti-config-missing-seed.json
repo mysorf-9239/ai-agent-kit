@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "template_name": "failure-output",
+  "status": "failed",
+  "run_id": "dti-graphdta-bindingdb-seed-unknown",
+  "error": {
+    "error_type": "validation_error",
+    "error_code": "DTI_CONFIG_MISSING_SEED",
+    "source_name": "train-dti-model",
+    "failed_step": "validate-experiment-config",
+    "retryable": false
+  },
+  "errors": [
+    "DTI_CONFIG_MISSING_SEED"
+  ],
+  "warnings": []
+}

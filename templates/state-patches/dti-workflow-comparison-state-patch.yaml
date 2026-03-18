@@ -1,0 +1,11 @@
+schema_version: 1.0.0
+source_type: workflow
+source_name: dti-run-comparison
+run_id: comparison-bindingdb-auroc
+status: completed
+operations:
+  - op: set
+    path: evaluation.comparisons.bindingdb-auroc-comparison.workflow_result
+    value:
+      workflow_name: dti-run-comparison
+      comparison_report_path: reports/comparisons/bindingdb-auroc-comparison.json

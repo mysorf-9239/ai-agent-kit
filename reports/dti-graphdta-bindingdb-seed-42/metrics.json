@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "template_name": "dti-evaluation-output",
+  "status": "completed",
+  "run_id": "dti-graphdta-bindingdb-seed-42",
+  "inputs": {
+    "dataset_id": "bindingdb_v1",
+    "model_family": "graphdta",
+    "seed": 42
+  },
+  "metrics": {
+    "auroc": 0.9112,
+    "auprc": 0.8821,
+    "f1": 0.8014
+  },
+  "artifacts": {
+    "model_path": "artifacts/dti-graphdta-bindingdb-seed-42/model.pt",
+    "metrics_path": "reports/dti-graphdta-bindingdb-seed-42/metrics.json",
+    "predictions_path": "reports/dti-graphdta-bindingdb-seed-42/predictions.csv"
+  },
+  "errors": [],
+  "warnings": []
+}

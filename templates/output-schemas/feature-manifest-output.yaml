@@ -1,0 +1,11 @@
+schema_version: 1.0.0
+template_name: feature-manifest-output
+status: completed
+run_id: dti-graphdta-bindingdb-seed-42
+dataset_id: bindingdb_v1
+features:
+  drug_encoder: gcn
+  target_encoder: cnn
+  feature_manifest_path: artifacts/dti-graphdta-bindingdb-seed-42/feature_manifest.json
+errors: []
+warnings: []

@@ -1,0 +1,11 @@
+schema_version: 1.0.0
+source_type: skill
+source_name: validate-dti-dataset
+run_id: dti-graphdta-bindingdb-seed-42
+status: completed
+operations:
+  - op: set
+    path: datasets.validated.bindingdb_v1
+    value:
+      status: completed
+      report_path: reports/dti-graphdta-bindingdb-seed-42/dataset_validation.json

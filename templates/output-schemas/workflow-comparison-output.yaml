@@ -1,0 +1,12 @@
+schema_version: 1.0.0
+template_name: workflow-comparison-output
+status: completed
+comparison_id: bindingdb-auroc-comparison
+workflow_name: dti-run-comparison
+inputs:
+  primary_metric: auroc
+  run_count: 2
+artifacts:
+  comparison_report_path: reports/comparisons/bindingdb-auroc-comparison.json
+errors: []
+warnings: []

@@ -1,0 +1,6 @@
+{
+  "run_id": "dti-graphdta-bindingdb-seed-42",
+  "reason": "MODEL_METRIC_OUT_OF_RANGE",
+  "source_name": "evaluate-dti-model",
+  "status": "quarantined"
+}

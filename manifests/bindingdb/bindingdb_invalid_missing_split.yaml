@@ -1,0 +1,13 @@
+schema_version: 1.0.0
+dataset_id: bindingdb_invalid
+task_type: drug-target-interaction
+drug_representation: graph
+target_representation: sequence
+split_strategy: scaffold_split
+splits:
+  train:
+    path: data/bindingdb/train.csv
+    record_count: 10000
+  test:
+    path: data/bindingdb/test.csv
+    record_count: 2000

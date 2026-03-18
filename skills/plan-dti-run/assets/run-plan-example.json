@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0.0",
+  "template_name": "dti-run-plan-output",
+  "status": "planned",
+  "run_id": "dti-graphdta-bindingdb-seed-42",
+  "task_type": "drug-target-interaction",
+  "workflow_name": "dti-benchmark-training",
+  "decision_trace": {
+    "mode": "train_and_evaluate",
+    "model_family": "graphdta",
+    "dataset_id": "bindingdb_v1"
+  }
+}

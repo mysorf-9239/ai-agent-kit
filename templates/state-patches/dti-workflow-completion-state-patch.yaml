@@ -1,0 +1,12 @@
+schema_version: 1.0.0
+source_type: workflow
+source_name: dti-benchmark-training
+run_id: dti-graphdta-bindingdb-seed-42
+status: completed
+operations:
+  - op: set
+    path: experiments.completed.dti-graphdta-bindingdb-seed-42.workflow_result
+    value:
+      workflow_name: dti-benchmark-training
+      summary_path: reports/dti-graphdta-bindingdb-seed-42/summary.md
+      metrics_path: reports/dti-graphdta-bindingdb-seed-42/metrics.json

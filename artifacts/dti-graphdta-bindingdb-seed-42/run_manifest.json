@@ -1,0 +1,16 @@
+{
+  "schema_version": "1.0.0",
+  "template_name": "run-manifest-output",
+  "status": "completed",
+  "run_id": "dti-graphdta-bindingdb-seed-42",
+  "dataset_id": "bindingdb_v1",
+  "model_family": "graphdta",
+  "seed": 42,
+  "artifacts": {
+    "model_path": "artifacts/dti-graphdta-bindingdb-seed-42/model.pt",
+    "optimizer_path": "artifacts/dti-graphdta-bindingdb-seed-42/optimizer.pt",
+    "run_manifest_path": "artifacts/dti-graphdta-bindingdb-seed-42/run_manifest.json"
+  },
+  "errors": [],
+  "warnings": []
+}

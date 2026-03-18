@@ -1,0 +1,14 @@
+schema_version: 1.0.0
+source_type: skill
+source_name: build-dti-model
+run_id: dti-graphdta-bindingdb-seed-42
+status: completed
+operations:
+  - op: set
+    path: artifacts.modelspecs.dti-graphdta-bindingdb-seed-42
+    value:
+      run_id: dti-graphdta-bindingdb-seed-42
+      artifact_type: model_spec
+      path: artifacts/dti-graphdta-bindingdb-seed-42/model_spec.json
+      producer: build-dti-model
+      validation_status: valid

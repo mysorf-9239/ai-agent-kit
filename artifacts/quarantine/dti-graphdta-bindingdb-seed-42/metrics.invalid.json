@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0.0",
+  "template_name": "dti-evaluation-output",
+  "status": "failed",
+  "run_id": "dti-graphdta-bindingdb-seed-42",
+  "metrics": {
+    "auroc": 1.221,
+    "auprc": 0.8821,
+    "f1": 0.8014
+  },
+  "errors": [
+    "MODEL_METRIC_OUT_OF_RANGE"
+  ],
+  "warnings": []
+}

@@ -1,0 +1,17 @@
+schema_version: 1.0.0
+template_name: dti-run-plan-output
+status: planned
+run_id: dti-graphdta-bindingdb-seed-42
+task_type: drug-target-interaction
+workflow_name: dti-benchmark-training
+inputs:
+  dataset_manifest: manifests/bindingdb/bindingdb_v1.yaml
+  experiment_config: templates/experiment-configs/dti-training-config.yaml
+decision_trace:
+  mode: train_and_evaluate
+  model_family: graphdta
+  dataset_id: bindingdb_v1
+artifacts:
+  run_plan_path: artifacts/dti-graphdta-bindingdb-seed-42/run_plan.json
+errors: []
+warnings: []

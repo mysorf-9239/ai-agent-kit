@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0.0",
+  "session": {
+    "active_workflow": null,
+    "active_skill": null
+  },
+  "datasets": {
+    "raw": {},
+    "validated": {
+      "bindingdb_v1": {
+        "status": "completed",
+        "report_path": "reports/dti-graphdta-bindingdb-seed-42/dataset_validation.json"
+      }
+    }
+  },
+  "experiments": {
+    "planned": {},
+    "active": {},
+    "completed": {
+      "dti-graphdta-bindingdb-seed-42": {
+        "workflow_name": "dti-benchmark-training",
+        "status": "completed"
+      }
+    },
+    "failed": {}
+  },
+  "artifacts": {
+    "features": {
+      "dti-graphdta-bindingdb-seed-42": {
+        "run_id": "dti-graphdta-bindingdb-seed-42",
+        "artifact_type": "feature_manifest",
+        "path": "artifacts/dti-graphdta-bindingdb-seed-42/feature_manifest.json",
+        "producer": "extract-dti-features",
+        "validation_status": "valid"
+      }
+    },
+    "modelspecs": {
+      "dti-graphdta-bindingdb-seed-42": {
+        "run_id": "dti-graphdta-bindingdb-seed-42",
+        "artifact_type": "model_spec",
+        "path": "artifacts/dti-graphdta-bindingdb-seed-42/model_spec.json",
+        "producer": "build-dti-model",
+        "validation_status": "valid"
+      }
+    },
+    "models": {
+      "dti-graphdta-bindingdb-seed-42": {
+        "run_id": "dti-graphdta-bindingdb-seed-42",
+        "artifact_type": "model",
+        "path": "artifacts/dti-graphdta-bindingdb-seed-42/model.pt",
+        "producer": "train-dti-model",
+        "validation_status": "valid"
+      }
+    },
+    "reports": {
+      "dti-graphdta-bindingdb-seed-42": {
+        "run_id": "dti-graphdta-bindingdb-seed-42",
+        "artifact_type": "metrics_report",
+        "path": "reports/dti-graphdta-bindingdb-seed-42/metrics.json",
+        "producer": "evaluate-dti-model",
+        "validation_status": "valid"
+      }
+    }
+  },
+  "evaluation": {
+    "latest_metrics": {
+      "dti-graphdta-bindingdb-seed-42": {
+        "auroc": 0.9112,
+        "auprc": 0.8821,
+        "f1": 0.8014
+      }
+    },
+    "comparisons": {
+      "bindingdb-auroc-comparison": {
+        "comparison_id": "bindingdb-auroc-comparison",
+        "primary_metric": "auroc",
+        "report_path": "reports/comparisons/bindingdb-auroc-comparison.json"
+      }
+    }
+  },
+  "memory": {
+    "decisions": [
+      {
+        "decision_id": "decision-0001",
+        "run_id": "dti-graphdta-bindingdb-seed-42",
+        "decision_type": "workflow_selection",
+        "selected_path": "dti-benchmark-training"
+      }
+    ],
+    "failures": [
+      {
+        "failure_id": "failure-0001",
+        "run_id": "comparison-bindingdb-auroc",
+        "error_code": "DTI_COMPARISON_SCHEMA_MISMATCH",
+        "retryable": false
+      }
+    ],
+    "warnings": []
+  }
+}

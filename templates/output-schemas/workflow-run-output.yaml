@@ -1,0 +1,16 @@
+schema_version: 1.0.0
+template_name: workflow-run-output
+status: completed
+run_id: dti-graphdta-bindingdb-seed-42
+workflow_name: dti-benchmark-training
+steps:
+  - plan-dti-run
+  - validate-dti-dataset
+  - train-dti-model
+  - evaluate-dti-model
+artifacts:
+  run_manifest_path: artifacts/dti-graphdta-bindingdb-seed-42/run_manifest.json
+  metrics_path: reports/dti-graphdta-bindingdb-seed-42/metrics.json
+  summary_path: reports/dti-graphdta-bindingdb-seed-42/summary.md
+errors: []
+warnings: []

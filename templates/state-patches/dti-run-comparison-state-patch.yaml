@@ -1,0 +1,12 @@
+schema_version: 1.0.0
+source_type: skill
+source_name: compare-dti-runs
+run_id: comparison-bindingdb-auroc
+status: completed
+operations:
+  - op: set
+    path: evaluation.comparisons.bindingdb-auroc-comparison
+    value:
+      comparison_id: bindingdb-auroc-comparison
+      primary_metric: auroc
+      report_path: reports/comparisons/bindingdb-auroc-comparison.json

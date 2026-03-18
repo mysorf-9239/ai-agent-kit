@@ -1,0 +1,17 @@
+{
+  "schema_version": "1.0.0",
+  "template_name": "failure-output",
+  "status": "failed",
+  "run_id": "comparison-bindingdb-auroc",
+  "error": {
+    "error_type": "schema_mismatch",
+    "error_code": "DTI_COMPARISON_SCHEMA_MISMATCH",
+    "source_name": "compare-dti-runs",
+    "failed_step": "validate-metrics-schema",
+    "retryable": false
+  },
+  "errors": [
+    "DTI_COMPARISON_SCHEMA_MISMATCH"
+  ],
+  "warnings": []
+}
