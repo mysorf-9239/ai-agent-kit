@@ -1,0 +1,40 @@
+import torch
+import torch.nn as nn
+from loguru import logger
+from ugtsdti.core.registry import MODELS
+
+# BƯỚC 1: Đặt tên định danh duy nhất (Snake case)
+@MODELS.register("my_custom_model")
+class MyCustomModel(nn.Module):
+    """
+    Template cho một mô hình Neural Network độc lập trong UGTSDTI.
+    """
+    
+    # BƯỚC 2: Toàn bộ tham số trong hàm __init__ này tự động map 1-1 với 
+    # block 'params' trong file YAML config tương ứng của bạn.
+    def __init__(self, input_dim: int, hidden_dim: int, num_layers: int = 1, dropout: float = 0.1):
+        super().__init__()
+        logger.info(f"Khởi tạo MyCustomModel với hidden_dim={hidden_dim}")
+        
+        layers = []
+        in_d = input_dim
+        for _ in range(num_layers):
+            layers.append(nn.Linear(in_d, hidden_dim))
+            layers.append(nn.ReLU())
+            layers.append(nn.Dropout(dropout))
+            in_d = hidden_dim
+            
+        self.net = nn.Sequential(*layers)
+        
+    def forward(self, x):
+        """
+        Input: Tensor hoặc dict chứa thông tin đầu vào.
+        Output: Đặc trưng đã xử lý hoặc Logit dự đoán.
+        """
+        # Nếu thiết kế DTI phức tạp, x thường là từ điển chứa "drug" và "protein"
+        if isinstance(x, dict):
+            feat = x.get("drug", x.get("target"))
+        else:
+            feat = x
+            
+        return self.net(feat)

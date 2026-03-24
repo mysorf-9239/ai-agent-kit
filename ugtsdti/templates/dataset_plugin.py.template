@@ -1,0 +1,41 @@
+import torch
+from torch.utils.data import Dataset
+from loguru import logger
+from ugtsdti.core.registry import DATASETS
+
+# BƯỚC 1: Đặt tên định danh duy nhất
+@DATASETS.register("my_custom_dataset")
+class MyCustomDataset(Dataset):
+    """
+    Template cho một Dataset độc lập trong UGTSDTI.
+    """
+    
+    # BƯỚC 2: Tham số cấu hình map với YAML trong configs/data/...
+    def __init__(self, data_path: str, split: str = "train", max_seq_len: int = 512):
+        super().__init__()
+        logger.info(f"Khởi tạo MyCustomDataset từ {data_path} (Split: {split})")
+        
+        self.data_path = data_path
+        self.split = split
+        self.max_seq_len = max_seq_len
+        
+        # Ví dụ load data
+        self.data = self._load_data()
+        
+    def _load_data(self):
+        # Thực hiện đọc CSV/FASTA hoặc `.pt` cache ở đây
+        return [{"drug": torch.randn(128), "target": torch.randn(256), "label": 1.0}] * 100
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        """
+        UGTSDTI mong đợi trả về (Input_Dict_hoặc_Tensor, Label_Tensor)
+        """
+        item = self.data[idx]
+        
+        # Tách nhãn ra khỏi inputs
+        label = torch.tensor(item.pop("label"), dtype=torch.float32)
+        
+        return item, label
