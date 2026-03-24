@@ -88,6 +88,7 @@ ugtsdti/core/metrics.py
 | Entry point | `python -m ugtsdti.main` |
 | Dataset to use | `tdc_caching_dataset` (NOT `dti_standard_dataset` — scaffold) |
 | Batch keys | `drug`, `target_ids`, `target_mask`, `label`, `drug_index`, `target_index` |
+| `drug_index` / `target_index` | Sequential node index 0..N-1 (per-split unique list) — NOT MD5 hash |
 | Hybrid outputs | `student_logits`, `teacher_logits`, `student_uncertainty`, `teacher_uncertainty`, `fused_logits` |
 | MC-Dropout fn | `_mc_forward(branch, batch, mc_samples)` → `(mean_logit, epistemic_var)` |
 | Metrics params | `y_score` (not `y_prob`), `affinity_threshold` (not `threshold`) |

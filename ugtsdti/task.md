@@ -4,40 +4,28 @@
 
 ---
 
-## Phase 11: Teacher GNN — IN PROGRESS (Highest Priority)
+## Phase 11: Teacher GNN — COMPLETE ✓
 
-`baseline_teacher` is `nn.Embedding` only — no real signal. This blocks
-PairGate and KD from working meaningfully. See `workflows/IMPLEMENT_TEACHER_GNN.md`
-for full implementation guide.
+All tasks done. See `.kiro/specs/teacher-gnn/tasks.md` for full checklist.
 
-### 11.1 Feature-based Graph Initialization
-- [ ] Implement RDKit Morgan fingerprint extractor for Drug nodes
-- [ ] Implement k-mer feature extractor for Protein nodes
-- [ ] Build DD (Drug-Drug) similarity graph from Tanimoto similarity on fingerprints
-- [ ] Build PP (Protein-Protein) similarity graph from k-mer cosine similarity
-- [ ] Save graphs to disk cache (`.pt`) to avoid recompute
+**Deliverables:**
+- `ugtsdti/data/graph_builder.py` — DD/PP graph build + cache + EMA + churn
+- `ugtsdti/models/teacher/gcn_teacher.py` — `GCNTeacher` registered, `set_graphs()`, `forward()`
+- `ugtsdti/main.py` — `_wire_teacher_graphs()` auto-wires graphs before training
+- `configs/model/teacher/gcn.yaml` + `configs/model/only_teacher_gcn.yaml`
+- `tests/test_teacher_gnn.py` — unit tests + P1–P9 property tests
 
-### 11.2 GNN Teacher Model
-- [ ] Implement `GCNTeacher` or `GATTeacher` with `@MODELS.register("gcn_teacher")`
-- [ ] Model receives `batch["drug_index"]` and `batch["target_index"]` for global graph lookup
-- [ ] Add Dropout layers so MC-Dropout can measure uncertainty
-- [ ] Create config `configs/model/teacher/gcn.yaml`
-- [ ] Import into `ugtsdti/models/__init__.py`
-- [ ] Unit test in `tests/test_models.py`
-- [ ] Smoke test: `model=only_teacher` AUROC > 0.5 on S1
-
-### 11.3 Graph Stability Controls
-- [ ] Add `warmup_epochs` config: freeze graph for first N epochs
-- [ ] Add `rebuild_every` config: rebuild kNN graph every N epochs
-- [ ] Add EMA embedding update: `feat_ema = decay * feat_ema + (1-decay) * feat`
-- [ ] Log "edge churn" (% edges changed after rebuild) to WandB
+**Smoke test command:**
+```
+python -m ugtsdti.main model=only_teacher_gcn data=tdc_davis trainer=default_trainer
+```
 
 ---
 
-## Phase 12: Gate & Loss Fixes — BLOCKED on Phase 11
+## Phase 12: Gate & Loss Fixes — NEXT (unblocked)
 
 ### 12.2 KD Loss wiring
-- [ ] Test `kd_dual_loss` with real Teacher logits
+- [ ] Test `kd_dual_loss` with real Teacher logits (GCNTeacher)
 - [ ] Add KL-divergence option (with temperature scaling) alongside MSE
 - [ ] Wire `kd_weight` and `reg_weight` from config instead of hardcoded `alpha`
 

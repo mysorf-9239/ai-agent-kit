@@ -47,6 +47,13 @@ Format: `[DATE] Decision — Rationale — Alternatives considered`
 **Rationale:** Teacher cần integer index để lookup trong global embedding table. MD5 modulo large prime cho collision rate thấp (~0.01% với DAVIS ~68k pairs).
 **Alternatives:** Sequential integer ID (cần global mapping table, phức tạp hơn), UUID (không phải integer).
 **Known issue:** Collision có thể xảy ra. Cần audit khi Teacher GNN thật được implement.
+**Status:** Superseded by decision below (2026-03-24).
+
+### [2026-03-24] Sequential index thay MD5 hash cho drug_index/target_index (Option B)
+**Decision:** Đổi `drug_index` và `target_index` trong batch từ MD5(SMILES) % 100003 sang sequential index (0..n_unique_drugs-1).
+**Rationale:** MD5 hash chỉ hoạt động với `nn.Embedding(100003)` — không thể dùng trực tiếp làm graph node index cho GCNTeacher (graph có n_drugs nodes, không phải 100003). Sequential index là chuẩn trong GNN transductive learning, collision-free, và dùng được trực tiếp cho cả `nn.Embedding` lẫn graph node lookup.
+**Impact:** Cache cũ (v1) bị invalidate — tự động rebuild khi detect version mismatch. `baseline_teacher` không cần sửa code (vẫn nhận `num_drugs` từ config), chỉ cần set đúng giá trị.
+**Alternatives rejected:** Option A (mapping hash→node_idx trong GCNTeacher) — phức tạp hơn, không giải quyết root cause.
 
 ---
 

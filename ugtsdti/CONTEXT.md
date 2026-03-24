@@ -1,6 +1,6 @@
 # UGTSDTI — Project Context
 
-Last updated: 2026-03-24
+Last updated: 2026-03-24 (Phase 11 complete)
 
 ---
 
@@ -58,23 +58,25 @@ Most SOTA picks one encoder type and does not handle cold-start automatically.
 - Trainer loop: fit/evaluate, early stopping, WandB logging, gradient clipping
 - Data pipeline: `TDCCachingDataset` with PyTDC, RDKit molecular graph, ESM tokenizer, disk cache `.pt`
 - Transforms: `smiles_to_graph` (OGB-standard 7 atom + 3 bond features), `ESMSequenceTokenizer`
+- Dataset indexing: sequential `drug_index`/`target_index` (0..N-1), `unique_smiles`/`unique_fasta` exposed as public attrs
+- Graph builder: `graph_builder.py` — DD (Tanimoto kNN) + PP (k-mer cosine kNN), disk cache, EMA update, edge churn
 - Models:
   - `baseline_student`: GlobalMeanPool on raw atom features + protein Embedding — pipeline validation only
-  - `baseline_teacher`: `nn.Embedding` via MD5-hashed node ID — **dummy, no real signal**
+  - `baseline_teacher`: `nn.Embedding` via sequential node ID — dummy, no real signal (kept for ablation)
+  - `GCNTeacher`: real GCN encoder on DD/PP graphs, `set_graphs()` + `forward()`, MC-Dropout ≥ 0.2
   - `pairgate_fusion`: gate MLP from `(student_var, teacher_var)` — logic correct, untested with real Teacher
   - `HybridDTIModel`: orchestration, supports only-student / only-teacher / hybrid via config
+- Pipeline wiring: `_wire_teacher_graphs()` in `main.py` auto-builds and sets graphs before training
 - Losses: `BCEWithLogitsLossWrapper`, `KDDualLoss` (MSE distillation + BCE)
 - Metrics: AUROC, AUPRC, F1, MSE, CI (Concordance Index)
-- Ablation configs: `only_student.yaml`, `only_teacher.yaml`, `hybrid_baseline.yaml`
-- Test suite: `test_data`, `test_models`, `test_losses`, `test_registry`
+- Ablation configs: `only_student.yaml`, `only_teacher.yaml`, `only_teacher_gcn.yaml`, `hybrid_baseline.yaml`
+- Test suite: `test_data`, `test_models`, `test_losses`, `test_registry`, `test_teacher_gnn` (P1–P9)
 - 15 baseline runs completed (2026-03-23)
 
 ### Not yet implemented / placeholder:
-- **Teacher GNN** — highest priority. `baseline_teacher` is `nn.Embedding` only.
-  Needs real GNN (GAT/GCN) with DD/PP similarity graphs from RDKit fingerprints + k-mer features.
 - **`cnn1d_student`**: forward pass uses mock input handling, not integrated with multimodal batch.
 - **`esm_student`**: exists but not tested end-to-end.
-- **KD loss wiring**: `KDDualLoss` untested with real Teacher logits.
+- **KD loss wiring**: `KDDualLoss` untested with real Teacher logits — Phase 12 next.
 - **`dti_standard_dataset`**: scaffold only, no split logic. Do not use.
 
 ---
@@ -119,6 +121,6 @@ Full rationale in `DECISIONS.md`. Quick reference:
 | KD loss | MSE (current), KL-div (planned) | MSE simpler until Teacher has real logits |
 | Data source | PyTDC | Standardized S1-S4 splits, reproducible |
 | Cache format | `.pt` disk cache | RDKit + ESM tokenizer too slow on-the-fly |
-| Node ID | MD5(SMILES) % 100003 | Deterministic, low collision rate |
+| Node ID | Sequential index 0..N-1 | Collision-free, direct graph lookup |
 | Config system | Hydra + Registry | Composable, CLI-overridable, no core edits needed |
 | Experiment tracking | WandB | Better UI, native sweep support |
