@@ -1,0 +1,552 @@
+# Implementation Plan: operator-portal-refactor
+
+## Overview
+
+Rebuild toàn bộ operator-portal theo kiến trúc platform-first, workflow-first. Thứ tự thực hiện theo
+dependency graph: platform engines → core → BFF → modules. Mỗi task build trên kết quả của task trước.
+
+Stack: Next.js 15 App Router, React 19, TypeScript strict, ShadcnUI, Tailwind CSS, Zustand, TanStack Query,
+next-auth, next-intl, fast-check (PBT), Vitest, Zod, @dnd-kit.
+
+## Tasks
+
+- [ ] 1. Khởi tạo project và cấu hình nền tảng
+  - Scaffold Next.js 15 App Router project với TypeScript strict mode
+  - Cài đặt dependencies: shadcn/ui, tailwindcss, zustand, @tanstack/react-query, next-auth, next-intl, zod, @dnd-kit/core, @dnd-kit/sortable, fast-check, vitest, sonner, next-themes
+  - Cấu hình `tsconfig.json` với `strict: true`, path aliases `@/*`
+  - Cấu hình Vitest với jsdom environment
+  - Tạo folder structure: `src/app`, `src/core`, `src/platform`, `src/modules`, `src/shared`
+  - _Requirements: 20.6_
+
+
+- [ ] 2. platform/design — Design tokens
+  - Tạo `src/app/globals.css` với portal-specific semantic tokens: `--success`, `--warning`, `--info` (oklch, light + dark)
+  - Tạo `src/platform/design/tokens.ts` export `spacing`, `semanticColors`, `typography`, `radius` dưới dạng Tailwind class names (không hardcode hex)
+  - Không override ShadcnUI defaults — chỉ thêm portal-specific tokens
+  - _Requirements: 1.1, 1.5_
+
+- [ ] 3. platform/ui — Primitive & semantic wrappers
+  - [ ] 3.1 Implement Button wrapper với `ButtonVariant` type và `variantMap` sang ShadcnUI variants
+    - File: `src/platform/ui/button.tsx`
+    - _Requirements: 1.2, 1.3, 1.4_
+  - [ ]* 3.2 Write property test cho Button variant mapping (Property 1)
+    - **Property 1: Design System variant mapping**
+    - **Validates: Requirements 1.4**
+  - [ ] 3.3 Implement các wrappers còn lại: Input, Select, Badge, Card, Dialog, Table, Tabs, Alert
+    - Files: `src/platform/ui/{input,select,badge,card,dialog,table,tabs,alert}.tsx`
+    - Mỗi wrapper nhận `className` prop và dùng `cn()` để extend (không replace) default styles
+    - _Requirements: 1.3, 1.6_
+  - [ ]* 3.4 Write property test cho className extension (Property 2)
+    - **Property 2: Design System className extension**
+    - **Validates: Requirements 1.6**
+  - [ ] 3.5 Implement `StatusBadge` component với `statusMap`, `translationNamespace`, fallback plain text
+    - File: `src/platform/ui/status-badge.tsx`
+    - _Requirements: 2.18, 2.19_
+  - [ ]* 3.6 Write property test cho StatusBadge fallback (Property 23)
+    - **Property 23: StatusBadge fallback for unknown status**
+    - **Validates: Requirements 2.19**
+  - [ ] 3.7 Implement semantic wrappers: `PrimaryActionButton`, `DangerActionButton`, `ToolbarActionButton`
+    - File: `src/platform/ui/semantic.tsx`
+    - _Requirements: 1.2_
+  - [ ] 3.8 Tạo barrel export `src/platform/ui/index.ts` export tất cả wrappers
+    - _Requirements: 1.7_
+
+
+- [ ] 4. platform/state — State views
+  - Implement `LoadingView`, `EmptyView`, `ErrorView`, `NotFoundView`, `PermissionDeniedView`
+  - File: `src/platform/state/index.ts` (và các component files)
+  - `ErrorView` có `onRetry` callback; `EmptyView` có optional `action` slot
+  - _Requirements: 16.1, 16.2, 16.6_
+
+- [ ] 5. platform/layout & navigation — AppShell, Sidebar, Topbar, Breadcrumbs
+  - [ ] 5.1 Implement `AppShell` với Sidebar (240px/64px) + Topbar + ContentFrame layout
+    - File: `src/platform/layout/app-shell.tsx`
+    - _Requirements: 6.1_
+  - [ ] 5.2 Implement `Sidebar` với `SidebarItem` type, menu groups, collapsible sub-items, role filtering
+    - File: `src/platform/navigation/sidebar.tsx`
+    - Sidebar footer: `NavUser` với user name + logout confirmation dialog
+    - _Requirements: 6.2, 6.3, 6.7, 6.8, 5.7_
+  - [ ]* 5.3 Write property test cho Sidebar role-based filtering (Property 25)
+    - **Property 25: Sidebar role-based filtering**
+    - **Validates: Requirements 5.7**
+  - [ ] 5.4 Implement `Topbar` với dark/light mode toggle (next-themes) và breadcrumbs slot
+    - File: `src/platform/navigation/topbar.tsx`
+    - _Requirements: 6.4, 6.5, 6.6_
+  - [ ] 5.5 Implement `Breadcrumbs` component đọc route path và `sidebarItems` config
+    - File: `src/platform/navigation/breadcrumbs.tsx`
+    - _Requirements: 6.4, 6.5_
+
+- [ ] 6. core/ — Types, enums, auth helpers
+  - [ ] 6.1 Tạo core types: `AppResponse<T>`, `Pagination`, `CursorPagination`
+    - File: `src/core/types/base.ts`
+    - _Requirements: 14.1_
+  - [ ] 6.2 Tạo domain types: `Vehicle`, `ApprovalRequest<T>`, `LoyaltyTransaction`, `Order`, `Evoucher`
+    - Files: `src/core/types/{vehicle,approval-request,loyalty,order,evoucher}.ts`
+    - _Requirements: 7.4, 8.4, 9.4, 10.4, 12.4_
+  - [ ] 6.3 Tạo enums: `ApprovalRequestTypeEnum`, `ApprovalRequestStatusEnum`, `OrderStatusEnum`, etc.
+    - Files: `src/core/enums/{approval-request,loyalty,order,vehicle}.ts`
+    - _Requirements: 15.4_
+  - [ ] 6.4 Implement auth helpers: `mustHasAnyRole(roles)` server-side utility, `HasAnyRole` component
+    - Files: `src/core/auth/must-has-any-role.ts`, `src/core/auth/has-any-role.tsx`
+    - `mustHasAnyRole` throws redirect nếu user không có role phù hợp
+    - _Requirements: 5.4, 5.6_
+  - [ ]* 6.5 Write property test cho HasAnyRole (Property 24)
+    - **Property 24: HasAnyRole renders children only with matching role**
+    - **Validates: Requirements 5.4**
+  - [ ]* 6.6 Write property test cho mustHasAnyRole (Property 26)
+    - **Property 26: mustHasAnyRole throws redirect for unauthorized user**
+    - **Validates: Requirements 5.6**
+
+
+- [ ] 7. platform/data/filter — Filter engine
+  - [ ] 7.1 Implement `FilterManifest` types và `FilterFieldType` union
+    - Files: `src/platform/data/filter/types.ts`, `src/platform/data/filter/manifest.ts`
+    - Bao gồm `FilterViewPreset`, `FilterValues`, `FilterState` (3-state: draft/applied/request)
+    - _Requirements: 4.1, 4.2_
+  - [ ] 7.2 Implement `serializeToNestedObject()` và `applyFieldTransforms()` serializer
+    - File: `src/platform/data/filter/serializer.ts`
+    - Hỗ trợ dot-path keys bất kỳ depth: `"custom_attributes.phone"` → `{ custom_attributes: { phone: "..." } }`
+    - _Requirements: 4.1_
+  - [ ]* 7.3 Write property test cho nested path serialization (Property 5)
+    - **Property 5: Filter nested path serialization**
+    - **Validates: Requirements 4.1**
+  - [ ]* 7.4 Write property test cho toSearchRequest vs toExportRequest (Property 4)
+    - **Property 4: Filter toSearchRequest vs toExportRequest produce different outputs**
+    - **Validates: Requirements 4.1**
+  - [ ] 7.5 Implement Zustand filter store (KHÔNG sessionStorage/localStorage)
+    - File: `src/platform/data/filter/store.ts`
+    - State: `draftValues`, `appliedValues`, `activeFields` per `storageKey`
+    - Actions: `setDraft`, `applyFilter`, `setActiveFields`, `clearAll` (gọi khi logout)
+    - _Requirements: 2.3, 4.5, 4.9, 20.4_
+  - [ ]* 7.6 Write property test cho filter draft/applied state independence (Property 3)
+    - **Property 3: Filter draft/applied state independence**
+    - **Validates: Requirements 4.1, 4.8**
+  - [ ]* 7.7 Write property test cho filter active fields persistence round-trip (Property 7)
+    - **Property 7: Filter active fields persistence round-trip**
+    - **Validates: Requirements 4.5**
+  - [ ]* 7.8 Write property test cho filter page reset (Property 8)
+    - **Property 8: Filter page reset on any value change**
+    - **Validates: Requirements 4.8**
+  - [ ]* 7.9 Write property test cho filter field removal clears value (Property 9)
+    - **Property 9: Filter field removal clears value**
+    - **Validates: Requirements 4.4**
+  - [ ]* 7.10 Write property test cho filter auto-adds fields with values (Property 10)
+    - **Property 10: Filter auto-adds fields with values**
+    - **Validates: Requirements 4.7**
+  - [ ]* 7.11 Write property test cho filter store clearAll (Property 34)
+    - **Property 34: Filter store clearAll resets all keys**
+    - **Validates: Requirements 4.9, 20.4**
+  - [ ] 7.12 Implement hooks: `use-filter-draft.ts`, `use-filter-apply.ts`, `use-filter-persistence.ts`
+    - Files: `src/platform/data/filter/hooks/`
+    - _Requirements: 4.5, 4.6, 4.7_
+  - [ ] 7.13 Implement `FilterBar` component và `FilterFieldRenderer`
+    - Files: `src/platform/data/filter/filter-bar.tsx`, `src/platform/data/filter/filter-field-renderer.tsx`
+    - Hiển thị `basicKeys` (first K fields) mặc định; thêm fields qua "+" control
+    - Hỗ trợ tất cả `FilterFieldType`: text, number, boolean, select, multi-select, date, date-range, async-select, async-multi-select, number-range, tag-input
+    - _Requirements: 4.1, 4.2, 4.3, 4.4_
+  - [ ]* 7.14 Write property test cho filter default visible fields count (Property 29)
+    - **Property 29: Filter default visible fields count**
+    - **Validates: Requirements 4.3**
+  - [ ]* 7.15 Write property test cho filter view preset injects implicit values (Property 6)
+    - **Property 6: Filter view preset injects implicit values**
+    - **Validates: Requirements 4.1**
+
+
+- [ ] 8. platform/data/table — Table engine
+  - [ ] 8.1 Implement Zustand column layout store (thay sessionStorage)
+    - File: `src/platform/data/table/store.ts`
+    - State: `layouts` per `storageKey` với `order`, `visibility`, `pinning`
+    - Actions: `setLayout`, `clearAllLayouts` (gọi khi logout)
+    - _Requirements: 3.4, 3.5, 20.4_
+  - [ ]* 8.2 Write property test cho column layout round-trip (Property 11)
+    - **Property 11: TableManifest column layout round-trip**
+    - **Validates: Requirements 3.4, 3.13**
+  - [ ] 8.3 Implement `useColumnLayout` hook đọc/ghi Zustand store
+    - File: `src/platform/data/table/hooks/use-column-layout.ts`
+    - Returns: `{ layout, setLayout, resetLayout, isDirty }`
+    - _Requirements: 3.4, 3.5, 3.6_
+  - [ ] 8.4 Implement `PaginationTable` (migrate từ `PaginationDataTable`)
+    - File: `src/platform/data/table/modes/PaginationTable.tsx`
+    - Giữ nguyên DnD (@dnd-kit horizontal axis), pin, visibility logic
+    - Migrate persistence từ sessionStorage sang Zustand (`useColumnLayout`)
+    - Thêm sort control vào `...` dropdown (cùng với pin options): "Sắp xếp tăng dần", "Sắp xếp giảm dần"
+    - `onSortChange` callback với `{ columnId, direction }`
+    - `meta.hiddenByDefault: true` → ẩn mặc định; `meta.sticky: true` → pin right mặc định
+    - "Mặc định cột" reset button khi layout khác default
+    - "Go to page" input; total count format `Intl.NumberFormat("vi-VN")`
+    - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 3.8, 3.9, 3.10, 3.11, 3.12_
+  - [ ]* 8.5 Write property test cho column hiddenByDefault (Property 12)
+    - **Property 12: Column hiddenByDefault initial state**
+    - **Validates: Requirements 3.7**
+  - [ ]* 8.6 Write property test cho column sticky initial pinning (Property 13)
+    - **Property 13: Column sticky initial pinning**
+    - **Validates: Requirements 3.8**
+  - [ ]* 8.7 Write property test cho reset button visibility (Property 14)
+    - **Property 14: Column layout reset button visibility**
+    - **Validates: Requirements 3.6**
+  - [ ]* 8.8 Write property test cho pagination total Vietnamese locale (Property 15)
+    - **Property 15: Pagination total Vietnamese locale formatting**
+    - **Validates: Requirements 3.9**
+  - [ ]* 8.9 Write property test cho sort callback invocation (Property 16)
+    - **Property 16: Sort callback invocation**
+    - **Validates: Requirements 3.12**
+  - [ ] 8.10 Implement `CursorTable` cho vehicle search (cursor-based pagination)
+    - File: `src/platform/data/table/modes/CursorTable.tsx`
+    - _Requirements: 7.2_
+  - [ ] 8.11 Implement `TableShell` wrapper và `TableManifest` type
+    - Files: `src/platform/data/table/TableShell.tsx`, `src/platform/data/table/types.ts`
+    - _Requirements: 2.1, 2.4_
+
+- [ ] 9. Checkpoint — Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+
+- [ ] 10. platform/data/diff — Diff engine
+  - [ ] 10.1 Implement `compare()` function (migrate từ `operator-portal/lib/comparator.ts`)
+    - File: `src/platform/data/diff/compare.ts`
+    - Giữ nguyên logic `normalize()` và `walk()` đệ quy; export `DiffChange` type
+    - _Requirements: 9.4_
+  - [ ]* 10.2 Write property test cho diff normalize consistency (Property 31)
+    - **Property 31: Diff compare normalize consistency**
+    - **Validates: Requirements 9.4**
+  - [ ] 10.3 Implement `FieldType` union và `renderValue()` function
+    - Files: `src/platform/data/diff/field-type.ts`, `src/platform/data/diff/render-value.ts`
+    - FieldType: null | boolean | number | date | static_enum | spec | raw
+    - _Requirements: 9.4_
+  - [ ] 10.4 Implement `ComparisonBlock` component (generalize từ `ApprovalRequestComparator`)
+    - File: `src/platform/page/review/comparison-block.tsx`
+    - 3-column table: Thuộc tính | Dữ liệu cũ | Dữ liệu mới
+    - Hỗ trợ `customRenderer` per field
+    - _Requirements: 9.4_
+  - [ ]* 10.5 Write property test cho ComparisonBlock renders both sides (Property 19)
+    - **Property 19: ComparisonBlock renders both sides**
+    - **Validates: Requirements 9.4**
+
+- [ ] 11. platform/data/reference — Reference data cache
+  - Implement `createReferenceDataProvider<T>()` factory
+  - Files: `src/platform/data/reference/reference-provider.tsx`, `src/platform/data/reference/use-reference-data.ts`
+  - Pattern: React Context + `useQuery` với `staleTime: Infinity`, `refetchOnWindowFocus: false`
+  - _Requirements: 20.4_
+  - [ ]* 11.1 Write property test cho ReferenceDataProvider staleTime (Property 32)
+    - **Property 32: ReferenceDataProvider staleTime infinity**
+    - **Validates: Requirements 20.4**
+
+- [ ] 12. platform/data/io — IO pipeline
+  - Relocate toàn bộ `operator-portal/lib/services/io/` vào `src/platform/data/io/`
+  - Files: `core/types.ts`, `core/service.ts`, `core/store.ts`, `core/specs.ts`, `core/utils.ts`
+  - Giữ nguyên `importService()` factory logic
+  - Thêm `exportService()` factory (tương tự importService, dùng `ExportSpec`)
+  - File: `src/platform/data/io/pipelines/export/service.ts`
+  - _Requirements: 10.1_
+  - [ ]* 12.1 Write property test cho IO import pipeline progress monotonicity (Property 33)
+    - **Property 33: IO import pipeline progress monotonicity**
+    - **Validates: Requirements 10.1**
+
+- [ ] 13. platform/data/api — API transport types
+  - Tạo `AppResponse<T>`, `CursorResponse<T>` types và query patterns
+  - File: `src/platform/data/api/types.ts`
+  - _Requirements: 14.1, 20.2_
+
+
+- [ ] 14. platform/page — Page archetypes
+  - [ ] 14.1 Implement `PageHeader`, `PageSection`, `ContentFrame` shared blocks
+    - Files: `src/platform/page/shared/{page-header,page-section,content-frame}.tsx`
+    - _Requirements: 6.4_
+  - [ ] 14.2 Implement `ListPage` archetype
+    - File: `src/platform/page/list/list-page.tsx`
+    - Slots: `header`, `summary?`, `filters`, `content`, `dialogs?`
+    - _Requirements: 2.1, 2.4_
+  - [ ]* 14.3 Write property test cho ListPage slot rendering (Property 17)
+    - **Property 17: ListPage slot rendering**
+    - **Validates: Requirements 2.1, 2.4**
+  - [ ] 14.4 Implement `MetadataGrid` block (generalize từ `ApprovalRequestDetail` + `VehicleRequestDetail`)
+    - File: `src/platform/page/record/metadata-grid.tsx`
+    - Types: `MetadataField<T>`, `MetadataGroup<T>` với `isDisplay` predicate và `element` renderer
+    - Grid columns: 3 | 4 | 5 (default 5)
+    - _Requirements: 2.7, 2.8, 2.9_
+  - [ ]* 14.5 Write property test cho MetadataGrid field visibility (Property 18)
+    - **Property 18: MetadataGrid field visibility**
+    - **Validates: Requirements 2.7, 2.8, 2.9**
+  - [ ] 14.6 Implement `RecordPage` archetype
+    - File: `src/platform/page/record/record-page.tsx`
+    - Slots: `header`, `metadata?`, `content`, `aside?`, `dialogs?`
+    - _Requirements: 7.4, 8.4_
+  - [ ] 14.7 Implement `ReviewPage` archetype
+    - File: `src/platform/page/review/review-page.tsx`
+    - Slots: `header`, `requestMeta`, `workspace`, `aside?`, `dialogs?`
+    - _Requirements: 9.4_
+  - [ ] 14.8 Implement `WorkspacePage` archetype
+    - File: `src/platform/page/workspace/workspace-page.tsx`
+    - Slots: `header`, `toolPanel`, `previewPanel`, `dialogs?`
+    - _Requirements: 10.1_
+  - [ ] 14.9 Implement `BatchPage` archetype
+    - File: `src/platform/page/batch/batch-page.tsx`
+    - Slots: `header`, `summary`, `content`, `dialogs?`
+    - _Requirements: 10.4_
+  - [ ]* 14.10 Write property test cho BatchPage embedded list row count (Property 20)
+    - **Property 20: BatchPage embedded list row count**
+    - **Validates: Requirements 10.4**
+  - [ ] 14.11 Implement `RequestMetaCard`, `SummaryCard`, `NotesBlock` blocks
+    - Files: `src/platform/page/review/request-meta-card.tsx`, `src/platform/page/record/summary-card.tsx`, `src/platform/page/record/notes-block.tsx`
+    - _Requirements: 9.4_
+
+
+- [ ] 15. platform/interaction — Form & workflow
+  - [ ] 15.1 Implement `FormShell`, `FormSection`, `FormActions`, RHF field primitives
+    - Files: `src/platform/interaction/form/{form-shell,form-section,form-actions,rhf-fields}.tsx`
+    - RHF fields: `TextField`, `SelectField`, `DateField`, `NumberField`, `TextareaField`
+    - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.8_
+  - [ ] 15.2 Implement `ActionDialog` với state machine IDLE → LOADING → SUCCESS | FAILED
+    - File: `src/platform/interaction/workflow/action-dialog.tsx`
+    - Props: `trigger`, `confirm`, `form`, `onValidForm`, `onCloseAfterSuccess`, `autoCloseOnSuccess`, `beforeOpen`
+    - Auto-close sau 2s nếu `autoCloseOnSuccess: true`
+    - _Requirements: 2.10, 2.11, 2.12_
+  - [ ]* 15.3 Write property test cho ActionDialog state machine (Property 21)
+    - **Property 21: ActionDialog state machine transitions**
+    - **Validates: Requirements 2.10, 2.11**
+  - [ ] 15.4 Implement `WorkflowFormMode` type definitions và `WorkflowFormModeMap`
+    - File: `src/platform/interaction/workflow/workflow-form-mode.ts`
+    - _Requirements: 8.6, 8.7_
+  - [ ] 15.5 Implement `WorkflowActionBar`, `WorkflowConfirmAction`, `WorkflowReasonAction`
+    - Files: `src/platform/interaction/workflow/{workflow-action-bar,workflow-confirm-action,workflow-reason-action}.tsx`
+    - `WorkflowActionBar` render chỉ actions có `allowedStatuses` chứa current status
+    - _Requirements: 9.5, 9.6, 9.7_
+  - [ ]* 15.6 Write property test cho WorkflowActionBar renders valid actions (Property 22)
+    - **Property 22: WorkflowActionBar renders valid actions for status**
+    - **Validates: Requirements 9.5, 9.6, 9.7**
+
+- [ ] 16. platform/media — Media components
+  - Implement `ImagePreviewer` (zoom), `FileUpload` (upload via `/api/files`), `FileViewer` (downloadable links)
+  - Implement `PdfViewer` (zoom controls), `ImagesZoomable` (embla-carousel), `ImageMagnifier`
+  - Files: `src/platform/media/{image-previewer,file-upload,file-viewer,pdf-viewer,images-zoomable,image-magnifier}.tsx`
+  - Image URLs từ MinIO proxy qua `/api/images` để tránh CORS
+  - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5, 17.6, 17.7_
+
+- [ ] 17. Checkpoint — Ensure all tests pass
+  - Ensure all tests pass, ask the user if questions arise.
+
+
+- [ ] 18. app/api BFF — Route handler factory và proxy routes
+  - [ ] 18.1 Implement `routeHandler` factory với auth check → role check → schema validation → error normalization
+    - File: `src/lib/handler.ts`
+    - Error hierarchy: 401 (no auth) → 403 (no role) → 400 (schema fail) → forward non-2xx → 503 (network) → 500
+    - Log với `X-Request-ID`, execution time, status
+    - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.7_
+  - [ ]* 18.2 Write property test cho API Proxy forwards non-2xx (Property 27)
+    - **Property 27: API Proxy forwards non-2xx status and body**
+    - **Validates: Requirements 14.4**
+  - [ ]* 18.3 Write property test cho API Proxy returns 503 on network error (Property 28)
+    - **Property 28: API Proxy returns 503 on network error**
+    - **Validates: Requirements 14.7**
+  - [ ] 18.4 Implement `httpClient` axios instance với Bearer token interceptor
+    - File: `src/lib/http-client.ts`
+    - _Requirements: 14.2, 14.3_
+  - [ ] 18.5 Implement proxy routes: `/api/auth`, `/api/vehicles`, `/api/loyalty`, `/api/orders`, `/api/vouchers`, `/api/rewards`, `/api/users`, `/api/batches`, `/api/files`, `/api/images`, `/api/product`
+    - Files: `src/app/api/{auth,vehicles,loyalty,orders,vouchers,rewards,users,batches,files,images,product}/`
+    - _Requirements: 14.6_
+
+- [ ] 19. Authentication và i18n setup
+  - [ ] 19.1 Cấu hình `next-auth` với credentials provider, session strategy
+    - File: `src/app/api/auth/[...nextauth]/route.ts`, `src/lib/auth.ts`
+    - Redirect unauthenticated → login; session expired → login với message
+    - _Requirements: 5.1, 5.2, 5.3, 5.8_
+  - [ ] 19.2 Cấu hình `next-intl` với locale `vi`, tổ chức translation files theo domain
+    - Files: `src/shared/i18n/`, `messages/vi/{auth,dialog,diff,page,pagination,sidebar,type,validation}.json`
+    - `type.json`: translations cho tất cả enum values
+    - `sidebar.json`: menu item titles; `page.json`: page titles cho breadcrumbs
+    - _Requirements: 15.1, 15.2, 15.3, 15.4, 15.5, 15.6_
+  - [ ] 19.3 Implement login page với credentials form, error display
+    - File: `src/app/login/page.tsx`
+    - _Requirements: 5.1, 5.8_
+  - [ ] 19.4 Implement middleware cho route protection và locale routing
+    - File: `src/middleware.ts`
+    - _Requirements: 5.2, 5.3_
+
+
+- [ ] 20. Module: vehicle
+  - [ ] 20.1 Implement vehicle module API layer: `vehicle-client.ts`, `vehicle-service.ts`, `vehicle-mapper.ts`
+    - Files: `src/modules/vehicle/{list,detail}/api/`
+    - _Requirements: 7.1, 7.2, 7.3_
+  - [ ] 20.2 Implement vehicle manifests: `filter-manifest.ts`, `table-manifest.ts`, `record-manifest.ts`
+    - Filter fields: plate number, frame number, engine number, verify status
+    - `storageKey: "vehicle_filter"` và `"vehicle_table"`
+    - _Requirements: 7.1, 7.4_
+  - [ ] 20.3 Implement vehicle hooks: `use-vehicle-list.ts`, `use-vehicle-detail.ts`
+    - Files: `src/modules/vehicle/{list,detail}/hooks/`
+    - `useVehicleList` dùng cursor pagination; `useVehicleDetail` dùng offset
+    - _Requirements: 7.2, 7.3_
+  - [ ] 20.4 Implement vehicle list page (cursor pagination tại `/vehicle`, offset tại `/vehicle/list`)
+    - Files: `src/modules/vehicle/list/pages/`, `src/app/vehicle/page.tsx`, `src/app/vehicle/list/page.tsx`
+    - _Requirements: 7.1, 7.2, 7.8_
+  - [ ] 20.5 Implement vehicle detail page với sections: basic info, model info, inspections, registrations, services, custom attributes
+    - Files: `src/modules/vehicle/detail/pages/detail-page.tsx`, `src/app/vehicle/detail/[id]/page.tsx`
+    - `VehiclePlate` component: yellow bg cho color "V", white cho others
+    - _Requirements: 7.3, 7.4, 7.7_
+  - [ ] 20.6 Implement vehicle update approval request flow (ActionDialog + `vehicle:admin` role guard)
+    - Files: `src/modules/vehicle/detail/slots/vehicle-action-bar.tsx`
+    - _Requirements: 7.5, 7.6_
+  - [ ] 20.7 Implement `VehicleSpecProvider` dùng `createReferenceDataProvider`
+    - File: `src/modules/vehicle/detail/vehicle-spec-provider.ts`
+    - _Requirements: 20.4_
+  - [ ]* 20.8 Write property test cho module client data flow integrity (Property 30)
+    - **Property 30: Module client data flow integrity**
+    - **Validates: Requirements 20.2, 20.6**
+
+- [ ] 21. Module: loyalty/transaction
+  - [ ] 21.1 Implement transaction API layer: `transaction-client.ts`, `transaction-service.ts`, `transaction-mapper.ts`
+    - Files: `src/modules/loyalty/transaction/api/`
+    - _Requirements: 8.1, 8.3_
+  - [ ] 21.2 Implement transaction manifests: `filter-manifest.ts`, `table-manifest.ts`, `record-manifest.ts`
+    - Filter fields: transaction ID, status, date range, customer name, phone, license plate, invoice number
+    - Nested path keys: `custom_attributes.customer_name`, `custom_attributes.phone`, etc.
+    - _Requirements: 8.2_
+  - [ ] 21.3 Implement transaction hooks: `use-transaction-list.ts`, `use-transaction-detail.ts`, `use-transaction-workflow.ts`
+    - _Requirements: 8.1, 8.3, 8.6, 8.7_
+  - [ ] 21.4 Implement transaction list page tại `/loyalty/transaction/list`
+    - Files: `src/modules/loyalty/transaction/pages/list-page.tsx`, `src/app/loyalty/transaction/list/page.tsx`
+    - _Requirements: 8.1, 8.2_
+  - [ ] 21.5 Implement transaction detail page với multi-mode form (update/revoke)
+    - Files: `src/modules/loyalty/transaction/pages/detail-page.tsx`, `src/app/loyalty/transaction/detail/[id]/page.tsx`
+    - Dùng `WorkflowFormMode` pattern với `modeConfig` map
+    - _Requirements: 8.3, 8.4, 8.5, 8.6, 8.7, 8.8_
+  - [ ] 21.6 Implement `TransactionStatusBadge` slot
+    - File: `src/modules/loyalty/transaction/slots/transaction-status-badge.tsx`
+    - _Requirements: 8.1_
+
+
+- [ ] 22. Module: loyalty/request (approval requests)
+  - [ ] 22.1 Implement loyalty request API layer: `request-client.ts`, `request-service.ts`, `request-mapper.ts`
+    - Files: `src/modules/loyalty/request/api/`
+    - _Requirements: 9.1, 9.3_
+  - [ ] 22.2 Implement request manifests: `filter-manifest.ts`, `table-manifest.ts`, `record-manifest.ts`
+    - Filter fields: request ID, status, date range, created by, customer name, phone, license plate
+    - _Requirements: 9.2_
+  - [ ] 22.3 Implement request list page với 2 tabs: "Cập nhật" (UPDATE) và "Thu hồi" (REVOKE)
+    - Files: `src/modules/loyalty/request/pages/list-page.tsx`, `src/app/loyalty/request/list/page.tsx`
+    - _Requirements: 9.1, 9.2_
+  - [ ] 22.4 Implement request detail page (ReviewPage archetype) với ComparisonBlock
+    - Files: `src/modules/loyalty/request/pages/detail-page.tsx`, `src/app/loyalty/request/detail/[id]/page.tsx`
+    - Hiển thị "Phê duyệt" và "Từ chối" khi status = PUBLISHED
+    - "Từ chối" yêu cầu rejection reason (WorkflowReasonAction)
+    - _Requirements: 9.3, 9.4, 9.5, 9.6, 9.7_
+  - [ ] 22.5 Implement `ApprovalRequestStatusBadge` slot với màu: PUBLISHED=info, APPROVED=success, REJECTED=danger, COMPLETED=success, FAILED=destructive
+    - File: `src/modules/loyalty/request/slots/request-status-badge.tsx`
+    - _Requirements: 9.8_
+
+- [ ] 23. Module: loyalty/member
+  - [ ] 23.1 Implement member API layer, manifests, hooks
+    - Files: `src/modules/loyalty/member/api/`, `src/modules/loyalty/member/manifests/`, `src/modules/loyalty/member/hooks/`
+    - Filter fields: customer ID, phone number, name, national ID
+    - _Requirements: 13.1, 13.2_
+  - [ ] 23.2 Implement member list page tại `/loyalty/member`
+    - Files: `src/modules/loyalty/member/pages/list-page.tsx`, `src/app/loyalty/member/page.tsx`
+    - _Requirements: 13.1, 13.2, 13.3_
+  - [ ] 23.3 Implement member detail page với profile info, loyalty balance, transaction history
+    - Files: `src/modules/loyalty/member/pages/detail-page.tsx`
+    - Point adjustment actions cho `loyalty:member:admin` role
+    - _Requirements: 13.4, 13.5_
+
+- [ ] 24. Module: evoucher/issuance
+  - [ ] 24.1 Implement evoucher API layer, manifests, hooks
+    - Files: `src/modules/evoucher/issuance/api/`, `src/modules/evoucher/issuance/manifests/`, `src/modules/evoucher/issuance/hooks/`
+    - Filter fields: phone number, voucher code, merchant code, serial code
+    - _Requirements: 10.1, 10.2_
+  - [ ] 24.2 Implement `EvoucherLayout` với program selector (Zustand store cho selected program)
+    - File: `src/app/evoucher/layout.tsx`
+    - _Requirements: 10.5, 10.6_
+  - [ ] 24.3 Implement evoucher issuance list page tại `/evoucher/issuance/list`
+    - Files: `src/modules/evoucher/issuance/pages/list-page.tsx`, `src/app/evoucher/issuance/list/page.tsx`
+    - Hiển thị prompt chọn program nếu chưa có program được chọn
+    - _Requirements: 10.1, 10.2, 10.6_
+  - [ ] 24.4 Implement evoucher issuance detail page (BatchPage archetype)
+    - Files: `src/modules/evoucher/issuance/pages/detail-page.tsx`, `src/app/evoucher/issuance/detail/[id]/page.tsx`
+    - Export button cho `evoucher:admin` role
+    - _Requirements: 10.3, 10.4, 10.7_
+  - [ ] 24.5 Implement evoucher import workspace (WorkspacePage archetype) tại `/evoucher/issuance`
+    - Files: `src/modules/evoucher/issuance/pages/workspace-page.tsx`, `src/app/evoucher/issuance/page.tsx`
+    - Dùng `importService` từ `platform/data/io`
+    - _Requirements: 10.1_
+
+
+- [ ] 25. Module: vehicle/request (approval requests cho vehicle)
+  - [ ] 25.1 Implement vehicle request API layer: `request-client.ts`, `request-service.ts`, `request-mapper.ts`
+    - Files: `src/modules/vehicle/request/api/`
+    - _Requirements: 7.5, 7.6_
+  - [ ] 25.2 Implement vehicle request manifests: `filter-manifest.ts`, `table-manifest.ts`, `record-manifest.ts`
+    - Filter fields: request ID, status, proposed_data.serial_code
+    - View presets: "Tất cả", "Chờ xử lý" (implicitValues: status = PUBLISHED)
+    - _Requirements: 7.5_
+  - [ ] 25.3 Implement vehicle request list page tại `/vehicle/request/list`
+    - Files: `src/modules/vehicle/request/pages/list-page.tsx`, `src/app/vehicle/request/list/page.tsx`
+    - _Requirements: 7.5_
+  - [ ] 25.4 Implement vehicle request detail page (ReviewPage archetype) với ComparisonBlock
+    - Files: `src/modules/vehicle/request/pages/detail-page.tsx`, `src/app/vehicle/request/detail/[id]/page.tsx`
+    - Hiển thị "Phê duyệt" và "Từ chối" khi status = PUBLISHED
+    - _Requirements: 7.5, 7.6_
+
+- [ ] 26. Module: ecommerce/product
+  - [ ] 26.1 Implement product API layer: `product-client.ts`, `product-service.ts`, `product-mapper.ts`
+    - Files: `src/modules/ecommerce/product/{list,detail}/api/`
+    - _Requirements: 11.1, 11.5, 11.6_
+  - [ ] 26.2 Implement product manifests cho attribute-sets, attributes, categories, products
+    - Filter fields:
+      - attribute-sets: code, name, status
+      - attributes: code, name, data type
+      - categories: code, name, status
+      - products: code, name, status, category
+    - _Requirements: 11.2, 11.3, 11.4, 11.5_
+  - [ ] 26.3 Implement product list pages: attribute-sets, attributes, categories, products
+    - Files: `src/app/ecommerce/product/{attribute-sets,attributes,categories,list}/page.tsx`
+    - _Requirements: 11.1, 11.2, 11.3, 11.4, 11.5_
+  - [ ] 26.4 Implement product detail page (RecordPage archetype) với media, attributes, category
+    - Files: `src/modules/ecommerce/product/detail/pages/detail-page.tsx`, `src/app/ecommerce/product/detail/[id]/page.tsx`
+    - Edit và status toggle cho `ecommerce:product:admin` role
+    - _Requirements: 11.6, 11.7_
+
+- [ ] 27. Module: ecommerce/order
+  - [ ] 27.1 Implement order API layer: `order-client.ts`, `order-service.ts`, `order-mapper.ts`
+    - Files: `src/modules/ecommerce/order/api/`
+    - _Requirements: 12.1, 12.3_
+  - [ ] 27.2 Implement order manifests: `filter-manifest.ts`, `table-manifest.ts`, `record-manifest.ts`
+    - Filter fields: order ID, status, order type, customer phone, customer name, plate number, date range
+    - _Requirements: 12.2_
+  - [ ] 27.3 Implement order list page tại `/ecommerce/order/list`
+    - Files: `src/modules/ecommerce/order/pages/list-page.tsx`, `src/app/ecommerce/order/list/page.tsx`
+    - _Requirements: 12.1, 12.2_
+  - [ ] 27.4 Implement order detail page (RecordPage archetype)
+    - Files: `src/modules/ecommerce/order/pages/detail-page.tsx`, `src/app/ecommerce/order/detail/[id]/page.tsx`
+    - Hiển thị: order summary (subtotal, discount, tax, total), order items, discounts, customer/vehicle info
+    - Order management actions cho `ecommerce:order:admin` role
+    - _Requirements: 12.3, 12.4, 12.5, 12.6_
+  - [ ] 27.5 Implement `OrderStatusBadge` slot với màu per `OrderStatusEnum`
+    - File: `src/modules/ecommerce/order/slots/order-status-badge.tsx`
+    - _Requirements: 12.5_
+
+- [ ] 28. Module: system/user
+  - [ ] 28.1 Implement user API layer: `user-client.ts`, `user-service.ts`, `user-mapper.ts`
+    - Files: `src/modules/system/user/api/`
+    - _Requirements: 19.1, 19.3_
+  - [ ] 28.2 Implement user manifests: `filter-manifest.ts`, `table-manifest.ts`
+    - Filter fields: username, email, role
+    - _Requirements: 19.2_
+  - [ ] 28.3 Implement user list page tại `/system/user` với create, edit, deactivate actions
+    - Files: `src/modules/system/user/pages/list-page.tsx`, `src/app/system/user/page.tsx`
+    - _Requirements: 19.1, 19.2, 19.4_
+  - [ ] 28.4 Implement user create/edit form với validation (username, email, password, roles)
+    - File: `src/modules/system/user/components/user-form.tsx`
+    - Hiển thị validation error nếu username/email đã tồn tại
+    - _Requirements: 19.5, 19.6_
+
+- [ ] 29. Dashboard
+  - Implement dashboard page tại `/dashboard` (OverviewPage archetype)
+  - File: `src/app/dashboard/page.tsx`, `src/modules/dashboard/pages/overview-page.tsx`
+  - _Requirements: 6.1_
+
+- [ ] 30. Checkpoint cuối — Integration và polish
+  - [ ] 30.1 Ensure tất cả property-based tests pass (34 properties)
+  - [ ] 30.2 Ensure tất cả module pages render đúng với mock data
+  - [ ] 30.3 Verify Zustand stores reset đúng khi logout (filter store + column layout store)
+  - [ ] 30.4 Verify dark/light mode hoạt động đúng với tất cả design tokens
+  - [ ] 30.5 Verify role-based access control hoạt động đúng trên tất cả routes
+  - [ ] 30.6 Verify i18n translations đầy đủ cho tất cả enum values, page titles, sidebar items
+  - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5, 20.6, 20.7_
